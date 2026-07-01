@@ -3,9 +3,29 @@
 [![CI](https://github.com/PlatformStackPulse/tf-atom-ecs-cluster-aws/actions/workflows/ci.yml/badge.svg)](https://github.com/PlatformStackPulse/tf-atom-ecs-cluster-aws/actions/workflows/ci.yml)
 ![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.6.0-blueviolet)
 
-## Purpose
+Terraform atom that provisions a single AWS ECS cluster with CloudWatch Container Insights and ECS Exec (`execute-command`) logging, named and tagged via the [tf-label](https://github.com/PlatformStackPulse/tf-label) null-label convention.
 
-ECS cluster with configurable capacity providers and container insights.
+## Features
+
+- **Named & tagged by tf-label** — the cluster name is the null-label `id` (e.g. `eg-test-thing`); all standard context tags are applied automatically.
+- **Container Insights toggle** — enable/disable CloudWatch Container Insights via `container_insights_enabled` (default `true`).
+- **ECS Exec logging** — configure `execute-command` logging mode (`NONE`, `DEFAULT`, `OVERRIDE`) via `execute_command_logging`, validated at plan time.
+- **Conditional creation** — set `enabled = false` (or via `context`) to create no resources; all outputs return `null`.
+
+## Usage
+
+```hcl
+module "ecs_cluster" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-ecs-cluster-aws.git?ref=v1.0.0"
+
+  namespace = "eg"
+  stage     = "test"
+  name      = "thing"
+
+  container_insights_enabled = true
+  execute_command_logging    = "DEFAULT"
+}
+```
 
 ## Module Documentation
 
@@ -67,3 +87,16 @@ ECS cluster with configurable capacity providers and container insights.
 | <a name="output_id"></a> [id](#output\_id) | ID of the ECS cluster |
 | <a name="output_name"></a> [name](#output\_name) | Name of the ECS cluster |
 <!-- END_TF_DOCS -->
+
+## Tests
+
+Unit tests run against a mocked AWS provider (no real cloud calls) and assert on plan-known values — the null-label `id`, resource counts, and the Container Insights setting.
+
+```bash
+# Unit tests (mock provider, no AWS credentials required)
+terraform init -backend=false
+terraform test -test-directory=tests/unit
+
+# Integration tests (require AWS credentials)
+terraform test -test-directory=tests/integration
+```
